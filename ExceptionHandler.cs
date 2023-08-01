@@ -8,16 +8,16 @@ namespace TgDentomoBot
         /// <summary>
         /// Every error handler
         /// </summary>
-        /// <param name="botClient">TgBot instance</param>
+        /// <param name="botClient">Telegram client</param>
         /// <param name="exception">Error type</param>
-        /// <param name="cancellationToken">Token to break connection</param>
+        /// <param name="cancellationToken">Cnc token</param>
         /// <returns></returns>
         public static Task HandlePollingErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
         {
             var ErrorMessage = exception switch
             {
                 ApiRequestException apiRequestException
-                    => $"Telegram API Error:\n[{apiRequestException.ErrorCode}]\n{apiRequestException.Message}",
+                    => $"Telegram API Error:\n[{apiRequestException.ErrorCode}]\n{apiRequestException.Message}\n{botClient}\n{cancellationToken}",
                 _ => exception.ToString()
             };
 

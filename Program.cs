@@ -5,20 +5,22 @@ using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using TgDentomoBot;
 
-string databasePath = "C:\\Users\\folderF3T1W\\AppData\\Roaming\\faraday\\db.sqlite";
-string tableName = "ChatItem";
-string fieldName = "output";
-string orderByField = "createdAt";
+DataBaseRequestParams requestParams = new(
+    "C:\\Users\\folderF3T1W\\AppData\\Roaming\\faraday\\db.sqlite",
+    "ChatItem",
+    "output",
+    "createdAt"
+);
 
 using CancellationTokenSource cts = new();
 
 FileSystemWatcher watcher = new()
 {
     // Set the path to the directory containing the .sqlite file
-    Path = Path.GetDirectoryName(databasePath) ?? "",
+    Path = Path.GetDirectoryName(requestParams.databasePath) ?? "",
 
     // Set the filter to watch for changes only in the .sqlite file
-    Filter = Path.GetFileName(databasePath)
+    Filter = Path.GetFileName(requestParams.databasePath)
 };
 
 // Subscribe to the Changed event, which will be raised whenever the .sqlite file is updated
@@ -66,18 +68,18 @@ async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, Cancel
     var userName = message.From?.FirstName;
     var userId = message.From?.Id;
 
-    string? value = DatabaseExtractor.GetLatestFieldValue(databasePath, tableName, fieldName, orderByField);
+    string? value = DatabaseExtractor.GetLatestFieldValue(requestParams);
     if (value != null)
     {
         string extractedContent = ExtractContentAfterColon(value);
 
         await botClient.SendTextMessageAsync(chatId, extractedContent, cancellationToken: cancellationToken);
-        Console.WriteLine($"Value in {databasePath}.{tableName}.{fieldName}: {extractedContent}");
+        Console.WriteLine($"Value in {requestParams.databasePath}.{requestParams.tableName}.{requestParams.fieldName}: {extractedContent}");
     }
     else
     {
         await botClient.SendTextMessageAsync(chatId, "Ошибочка!", cancellationToken: cancellationToken);
-        Console.WriteLine($"Value not found in {databasePath}.{tableName}.{fieldName}");
+        Console.WriteLine($"Value not found in {requestParams.databasePath}.{requestParams.tableName}.{requestParams.fieldName}");
     }
 }
 
@@ -103,7 +105,7 @@ static string ExtractContentAfterColon(string input)
 void OnFileChanged(object sender, FileSystemEventArgs e)
 {
     // When the .sqlite file is updated, execute the GetLatestFieldValue method
-    string? latestValue = DatabaseExtractor.GetLatestFieldValue(databasePath, tableName, fieldName, orderByField);
+    string? latestValue = DatabaseExtractor.GetLatestFieldValue(requestParams);
     if ((latestValue ?? "").EndsWith("#{user}:"))
     {
         // Process the response
