@@ -1,5 +1,4 @@
 ﻿using FaradayBot;
-using System.Text.RegularExpressions;
 using Telegram.Bot;
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
@@ -11,21 +10,7 @@ string tableName = "ChatItem";
 string fieldName = "output";
 string orderByField = "createdAt";
 
-TelegramBotClient botClient = new("6325714020:AAHab93QTiW6-UDRk8bJPKWmZI3x67A98yw");
-
 using CancellationTokenSource cts = new();
-await botClient.DeleteWebhookAsync(); // TODO: Delete when webhook will be setted.
-ReceiverOptions receiverOptions = new() // StartReceiving does not block the caller thread. Receiving is done on the ThreadPool.
-{
-    AllowedUpdates = Array.Empty<UpdateType>() // receive all update types except ChatMember related updates
-};
-
-/*botClient.StartReceiving(
-    updateHandler: HandleUpdateAsync,
-    pollingErrorHandler: ExceptionHandler.HandlePollingErrorAsync,
-    receiverOptions: receiverOptions,
-    cancellationToken: cts.Token
-);*/
 
 FileSystemWatcher watcher = new()
 {
@@ -41,18 +26,33 @@ watcher.Changed += OnFileChanged;
 
 // Start watching for changes
 watcher.EnableRaisingEvents = true;
+Console.WriteLine("Sqlite is checking.");
 
-// Keep the program running
-var me = await botClient.GetMeAsync();
-Console.WriteLine($"Start listening for @{me.Username}");
-Console.WriteLine("File system watcher is running. Press any key to stop.");
+// Start listening for Telegram Bot messages
+TelegramBotClient botClient = new("6325714020:AAHab93QTiW6-UDRk8bJPKWmZI3x67A98yw");
+var receiver = new QueuedUpdateReceiver(botClient);
+
+ReceiverOptions receiverOptions = new() // StartReceiving does not block the caller thread. Receiving is done on the ThreadPool.
+{
+    AllowedUpdates = Array.Empty<UpdateType>() // receive all update types except ChatMember related updates
+};
+
+botClient.StartReceiving(
+    updateHandler: HandleUpdateAsync,
+    pollingErrorHandler: ExceptionHandler.HandlePollingErrorAsync,
+    receiverOptions: receiverOptions,
+    cancellationToken: cts.Token
+);
+
+// Keep the program running until cancellation is requested
+Console.WriteLine("Bot is running. Press any key to stop.");
 Console.ReadKey();
+
+// Cancel receiving messages
+cts.Cancel();
 
 // Stop watching for changes when the program is stopped
 watcher.EnableRaisingEvents = false;
-
-//Cancel receiving messages
-cts.Cancel();
 
 async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
 {
